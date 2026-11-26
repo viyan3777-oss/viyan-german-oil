@@ -1,0 +1,1970 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import {
+  Droplet,
+  Car,
+  Receipt,
+  ShieldCheck,
+  Lock,
+  Unlock,
+  Languages,
+  Printer,
+  Plus,
+  Trash2,
+  CheckCircle2,
+  MessageCircle,
+  Phone,
+  Gauge,
+  FileText,
+  Recycle,
+  RefreshCw,
+  PackagePlus,
+  Search,
+  Percent,
+  Wallet,
+  CreditCard,
+  Image as ImageIcon,
+  MapPin,
+  Store,
+  Wrench,
+  AlertTriangle,
+  X
+} from 'lucide-react';
+
+const CHEF_PIN = '1234';
+
+const DEFAULT_BRANDING = {
+  companyName: 'VIYAN GERMAN OIL',
+  subtitle: 'Erbil Service Center • Made in Germany',
+  address: '100m Street / Baharka Road, Erbil, Kurdistan - Iraq',
+  phone: '+964 750 000 0000',
+  footerNote: 'Vielen Dank für Ihr Vertrauen! • شكراً لثقتكم بنا',
+  logoDataUrl: '',
+  iqdRate: 1430
+};
+
+const DEFAULT_OILS = [
+  {
+    id: '5w30',
+    name: 'Viyan German 5W-30 Longlife',
+    spec: 'Vollsynthetisch • API SP / ACEA C3',
+    costEur: 4.7,
+    priceEur: 11.5,
+    drumCapacity: 208
+  },
+  {
+    id: '5w40',
+    name: 'Viyan German 5W-40 High-Perf',
+    spec: 'Synthetisch • Hitze-Schutz Erbil',
+    costEur: 4.3,
+    priceEur: 10.5,
+    drumCapacity: 208
+  },
+  {
+    id: '10w40',
+    name: 'Viyan German 10W-40 Turbo',
+    spec: 'Teilsynthetisch • High-Mileage',
+    costEur: 3.6,
+    priceEur: 8.5,
+    drumCapacity: 208
+  }
+];
+
+const DEFAULT_CATALOG_ITEMS = [
+  {
+    id: 'srv-oilfilter',
+    category: 'Filter',
+    de: 'Original Ölfilter',
+    ar: 'فلتر زيت أصلي',
+    costEur: 3.5,
+    priceEur: 8.0
+  },
+  {
+    id: 'srv-airfilter',
+    category: 'Filter',
+    de: 'Luftfilterwechsel',
+    ar: 'تبديل فلتر الهواء',
+    costEur: 4.0,
+    priceEur: 9.5
+  },
+  {
+    id: 'srv-cabinfilter',
+    category: 'Filter',
+    de: 'Innenraumfilter (Klima)',
+    ar: 'فلتر المكيف',
+    costEur: 3.5,
+    priceEur: 8.5
+  },
+  {
+    id: 'srv-engineflush',
+    category: 'Service',
+    de: 'Motor-Innenreinigung',
+    ar: 'غسيل المحرك الداخلي',
+    costEur: 4.5,
+    priceEur: 12.0
+  },
+  {
+    id: 'srv-tire-mount',
+    category: 'Reifen',
+    de: 'Reifenwechsel & Wuchten (Satz)',
+    ar: 'تبديل وموازنة الإطارات',
+    costEur: 5.0,
+    priceEur: 18.0
+  },
+  {
+    id: 'srv-tire-new',
+    category: 'Reifen',
+    de: 'Neureifen Premium (1 Stück)',
+    ar: 'إطار جديد ممتاز (قطعة واحدة)',
+    costEur: 45.0,
+    priceEur: 68.0
+  }
+];
+
+const DICTIONARY_PHRASES = [
+  { ar: 'تبديل زيت كامل مع الفلتر', de: 'Kompletter Ölwechsel inklusive Ölfilter' },
+  { ar: 'يوجد تهريب زيت خفيف من الأسفل', de: 'Leichter Ölverlust am Unterboden festgestellt' },
+  { ar: 'تم فحص ضغط الإطارات والماء', de: 'Reifendruck und Kühlwasser geprüft' },
+  { ar: 'تم تركيب إطارات جديدة وموازنتها', de: 'Neue Reifen montiert und ausgewuchtet' },
+  { ar: 'المحرك بحالة ممتازة', de: 'Motor in einwandfreiem Zustand' }
+];
+
+const TRANSLATIONS = {
+  de: {
+    posTab: 'Kasse (POS)',
+    customersTab: 'Kunden & 3,5-Monats-Reminder',
+    zbonTab: 'Z-Bon & Tagesabschluss',
+    chefTab: 'Chef-Cockpit, Katalog & Logo',
+    pit: 'Grube',
+    vehicleHeader: 'Fahrzeugdaten & Grube',
+    plateLabel: 'Kennzeichen (Pflicht)',
+    platePlaceholder: 'z.B. 22 A 84920 Erbil',
+    kmLabel: 'Kilometerstand (km)',
+    phoneLabel: 'Telefon / WhatsApp (+964)',
+    selectOil: '1. Fass-Öl wählen (oder reiner Teile-/Reifenverkauf)',
+    noOilNeeded: 'Kein Ölwechsel (Nur Teile / Reifen / Service)',
+    litersLabel: '2. Abgezapfte Liter (Digital-Pistole / Maßbecher)',
+    extrasLabel: '3. Filter, Reifen, Teile & Services (Mengen - / +)',
+    customOneOffTitle: 'Schnell-Position (Einmaliges Teil / Sonderpreis)',
+    notesLabel: 'Werkstatt-Notiz (Arabisch ↔ Deutsch)',
+    translateBtn: 'Übersetzen',
+    checkoutBtn: 'Zahlung verbuchen & Bon drucken',
+    total: 'Gesamtbetrag',
+    discountLabel: 'Rabatt (€)',
+    paymentMethodLabel: 'Zahlungsart',
+    cash: 'Bar (Cash)',
+    card: 'Karte / FastPay / FIB',
+    drumStockTitle: '208L Fass-Bestand (Live Kontrolle)',
+    chefLocked: 'Chef-Bereich gesperrt (PIN eingeben)',
+    unlockBtn: 'Entsperren',
+    revenueToday: 'Umsatz aktuelle Schicht',
+    profitToday: 'Reingewinn (Chef)',
+    carsToday: 'Bediente Fahrzeuge',
+    byproductTitle: 'Altöl- & Stahlfass-Verkauf verbuchen',
+    byproductBtn: '+ Nebeneinnahme buchen',
+    createZBon: 'Schicht abschließen & Z-Bon erstellen',
+    zbonHistory: 'Archivierte Z-Bons (Unveränderlich)',
+    sendWhatsapp: 'WhatsApp Erinnerung senden',
+    dueForService: 'Fällig für Ölwechsel (> 105 Tage)',
+    receiptTitle: 'SERVICE- & KASSENBELEG',
+    nextServiceHint: 'Nächster empfohlener Service in 3,5 Monaten oder +7.000 km'
+  },
+  ar: {
+    posTab: 'نقطة البيع (الكاشير)',
+    customersTab: 'الزبائن وتذكير الواتساب (٣.٥ أشهر)',
+    zbonTab: 'تقرير الإغلاق اليومي (Z-Bon)',
+    chefTab: 'لوحة المدير، المنتجات والشعار',
+    pit: 'حفرة',
+    vehicleHeader: 'بيانات السيارة والحفرة',
+    plateLabel: 'رقم السيارة (إلزامي)',
+    platePlaceholder: 'مثال: 22 A 84920 أربيل',
+    kmLabel: 'عداد المسافة (كم)',
+    phoneLabel: 'رقم الهاتف / واتساب (+964)',
+    selectOil: '١. اختر الزيت (أو بيع قطع غيار / إطارات فقط)',
+    noOilNeeded: 'بدون تبديل زيت (قطع غيار / إطارات فقط)',
+    litersLabel: '٢. الكمية باللتر (العداد الرقمي)',
+    extrasLabel: '٣. الفلاتر، الإطارات والخدمات الإضافية',
+    customOneOffTitle: 'إضافة سريعة (قطعة خاصة / سعر مخصص)',
+    notesLabel: 'ملاحظات الورشة (عربي ↔ ألماني)',
+    translateBtn: 'ترجمة',
+    checkoutBtn: 'تأكيد الدفع وطباعة الوصل',
+    total: 'المجموع الكلي',
+    discountLabel: 'خصم (€)',
+    paymentMethodLabel: 'طريقة الدفع',
+    cash: 'نقداً (كاش)',
+    card: 'بطاقة / FastPay / FIB',
+    drumStockTitle: 'مخزون براميل ٢٠٨ لتر (مراقبة مباشرة)',
+    chefLocked: 'قسم المدير مقفل (أدخل الرمز)',
+    unlockBtn: 'فتح القفل',
+    revenueToday: 'مبيعات الوردية الحالية',
+    profitToday: 'صافي الربح (للمدير)',
+    carsToday: 'السيارات المخدومة',
+    byproductTitle: 'تسجيل بيع الزيت المستعمل والبراميل الفارغة',
+    byproductBtn: '+ إضافة دخل إضافي',
+    createZBon: 'إغلاق الوردية وإصدار Z-Bon',
+    zbonHistory: 'سجل تقارير الإغلاق السابقة',
+    sendWhatsapp: 'إرسال تذكير واتساب',
+    dueForService: 'مستحق لتبديل الزيت (أكثر من ١٠٥ أيام)',
+    receiptTitle: 'وصل خدمة ومبيعات رسمي',
+    nextServiceHint: 'موعد الخدمة القادم بعد ٣.٥ أشهر أو ٧,٠٠٠ كم'
+  }
+};
+
+export default function App() {
+  const [lang, setLang] = useState('de');
+  const t = TRANSLATIONS[lang];
+  const isRtl = lang === 'ar';
+
+  // Chef PIN & Sub-Navigation
+  const [isChefUnlocked, setIsChefUnlocked] = useState(false);
+  const [pinInput, setPinInput] = useState('');
+  const [pinError, setPinError] = useState('');
+  const [chefSubTab, setChefSubTab] = useState('overview'); // overview | catalog | branding
+
+  // Main Navigation
+  const [activeTab, setActiveTab] = useState('pos');
+
+  // Toast Feedback & Confirmation Modals (NO window.alert/confirm)
+  const [toast, setToast] = useState(null);
+  const [deleteOrderId, setDeleteOrderId] = useState(null);
+
+  // Dynamic Settings & Catalog State (Saved in LocalStorage)
+  const [branding, setBranding] = useState(DEFAULT_BRANDING);
+  const [oils, setOils] = useState(DEFAULT_OILS);
+  const [catalogItems, setCatalogItems] = useState(DEFAULT_CATALOG_ITEMS);
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('ALL');
+
+  // New Catalog Item Form (Chef)
+  const [newItemCategory, setNewItemCategory] = useState('Reifen');
+  const [newItemDe, setNewItemDe] = useState('');
+  const [newItemAr, setNewItemAr] = useState('');
+  const [newItemCost, setNewItemCost] = useState('');
+  const [newItemPrice, setNewItemPrice] = useState('');
+
+  // POS Form State
+  const [selectedPit, setSelectedPit] = useState(1);
+  const [plate, setPlate] = useState('');
+  const [mileage, setMileage] = useState('');
+  const [phone, setPhone] = useState('+964 ');
+  const [selectedOilId, setSelectedOilId] = useState('5w30'); // 'none' or oil id
+  const [liters, setLiters] = useState(5.0);
+  const [cartQuantities, setCartQuantities] = useState({ 'srv-oilfilter': 1 });
+  const [oneOffItems, setOneOffItems] = useState([]);
+  const [oneOffName, setOneOffName] = useState('');
+  const [oneOffPrice, setOneOffPrice] = useState('');
+  const [oneOffCost, setOneOffCost] = useState('');
+  const [discountEur, setDiscountEur] = useState(0);
+  const [paymentMethod, setPaymentMethod] = useState('cash');
+  const [noteRaw, setNoteRaw] = useState('');
+  const [noteTranslated, setNoteTranslated] = useState('');
+  const [lastReceipt, setLastReceipt] = useState(null);
+
+  // Customer Search
+  const [customerSearch, setCustomerSearch] = useState('');
+
+  // Byproduct (Altöl & Fässer) Form
+  const [byproductDesc, setByproductDesc] = useState('1x 208L Fass inkl. Altöl (Logo überlackiert)');
+  const [byproductEur, setByproductEur] = useState(55);
+
+  // Persistent Data
+  const [orders, setOrders] = useState([]);
+  const [zBons, setZBons] = useState([]);
+  const [byproducts, setByproducts] = useState([]);
+  const [drumLevels, setDrumLevels] = useState({
+    '5w30': 196.5,
+    '5w40': 203.0,
+    '10w40': 208.0
+  });
+
+  const showNotification = (message, type = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3500);
+  };
+
+  // Load initial data from LocalStorage
+  useEffect(() => {
+    try {
+      const savedOrders = localStorage.getItem('viyan_pro_orders');
+      const savedZBons = localStorage.getItem('viyan_pro_zbons');
+      const savedDrums = localStorage.getItem('viyan_pro_drums');
+      const savedByproducts = localStorage.getItem('viyan_pro_byproducts');
+      const savedBranding = localStorage.getItem('viyan_pro_branding');
+      const savedCatalog = localStorage.getItem('viyan_pro_catalog');
+      const savedOils = localStorage.getItem('viyan_pro_oils');
+
+      if (savedBranding) setBranding(JSON.parse(savedBranding));
+      if (savedCatalog) setCatalogItems(JSON.parse(savedCatalog));
+      if (savedOils) setOils(JSON.parse(savedOils));
+
+      if (savedOrders) {
+        setOrders(JSON.parse(savedOrders));
+      } else {
+        const oldDate = new Date(Date.now() - 112 * 24 * 60 * 60 * 1000).toISOString();
+        const todayDate = new Date().toISOString();
+        const initialOrders = [
+          {
+            id: 'BON-104821',
+            plate: '22 A 44910 ERBIL',
+            mileage: 84200,
+            phone: '+9647501234567',
+            pit: 2,
+            oilId: '5w30',
+            oilName: 'Viyan German 5W-30 Longlife',
+            liters: 6.5,
+            lineItems: [{ nameDe: 'Original Ölfilter', nameAr: 'فلتر زيت أصلي', qty: 1, priceEur: 8.0 }],
+            discountEur: 0,
+            paymentMethod: 'cash',
+            totalEur: 82.75,
+            costEur: 34.05,
+            profitEur: 48.7,
+            noteTranslated: 'Kompletter Ölwechsel inklusive Ölfilter | تبديل زيت كامل مع الفلتر',
+            createdAt: oldDate,
+            closedInZBon: true
+          },
+          {
+            id: 'BON-104955',
+            plate: '22 K 90122 ERBIL',
+            mileage: 41500,
+            phone: '+9647709876543',
+            pit: 1,
+            oilId: '5w40',
+            oilName: 'Viyan German 5W-40 High-Perf',
+            liters: 5.0,
+            lineItems: [
+              { nameDe: 'Original Ölfilter', nameAr: 'فلتر زيت أصلي', qty: 1, priceEur: 8.0 },
+              { nameDe: 'Reifenwechsel & Wuchten (Satz)', nameAr: 'تبديل وموازنة الإطارات', qty: 1, priceEur: 18.0 }
+            ],
+            discountEur: 0,
+            paymentMethod: 'card',
+            totalEur: 78.5,
+            costEur: 30.0,
+            profitEur: 48.5,
+            noteTranslated: 'Motor in einwandfreiem Zustand | المحرك بحالة ممتازة',
+            createdAt: todayDate,
+            closedInZBon: false
+          }
+        ];
+        setOrders(initialOrders);
+        localStorage.setItem('viyan_pro_orders', JSON.stringify(initialOrders));
+      }
+
+      if (savedZBons) setZBons(JSON.parse(savedZBons));
+      if (savedByproducts) setByproducts(JSON.parse(savedByproducts));
+      if (savedDrums) {
+        setDrumLevels(JSON.parse(savedDrums));
+      } else {
+        const initDrums = { '5w30': 196.5, '5w40': 203.0, '10w40': 208.0 };
+        setDrumLevels(initDrums);
+        localStorage.setItem('viyan_pro_drums', JSON.stringify(initDrums));
+      }
+    } catch (err) {
+      console.error('LocalStorage load error:', err);
+    }
+  }, []);
+
+  // Save Config Helper
+  const saveConfigToStore = (nextBranding, nextCatalog, nextOils) => {
+    try {
+      localStorage.setItem('viyan_pro_branding', JSON.stringify(nextBranding));
+      localStorage.setItem('viyan_pro_catalog', JSON.stringify(nextCatalog));
+      localStorage.setItem('viyan_pro_oils', JSON.stringify(nextOils));
+    } catch (err) {
+      console.error('Save config error:', err);
+    }
+  };
+
+  // Logo Upload Handler
+  const handleLogoUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const nextBranding = { ...branding, logoDataUrl: reader.result };
+      setBranding(nextBranding);
+      saveConfigToStore(nextBranding, catalogItems, oils);
+      showNotification('Logo erfolgreich auf Kassenbon übernommen!');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Add New Product/Service to Catalog
+  const handleAddCatalogItem = (e) => {
+    e.preventDefault();
+    if (!newItemDe.trim() || !newItemPrice) return;
+    const item = {
+      id: 'item-' + Date.now(),
+      category: newItemCategory.trim() || 'Service',
+      de: newItemDe.trim(),
+      ar: newItemAr.trim() || newItemDe.trim(),
+      costEur: Number(newItemCost) || 0,
+      priceEur: Number(newItemPrice) || 0
+    };
+    const nextCatalog = [...catalogItems, item];
+    setCatalogItems(nextCatalog);
+    saveConfigToStore(branding, nextCatalog, oils);
+
+    setNewItemDe('');
+    setNewItemAr('');
+    setNewItemCost('');
+    setNewItemPrice('');
+    showNotification(`"${item.de}" zum Kassen-Katalog hinzugefügt!`);
+  };
+
+  const handleDeleteCatalogItem = (id) => {
+    const nextCatalog = catalogItems.filter((item) => item.id !== id);
+    setCatalogItems(nextCatalog);
+    saveConfigToStore(branding, nextCatalog, oils);
+    showNotification('Artikel aus Katalog entfernt.', 'info');
+  };
+
+  const handleUpdateOilPrice = (oilId, field, value) => {
+    const nextOils = oils.map((o) =>
+      o.id === oilId ? { ...o, [field]: Number(value) || 0 } : o
+    );
+    setOils(nextOils);
+    saveConfigToStore(branding, catalogItems, nextOils);
+  };
+
+  // Cart Quantity Helpers
+  const updateItemQty = (itemId, delta) => {
+    setCartQuantities((prev) => {
+      const current = prev[itemId] || 0;
+      const next = Math.max(0, current + delta);
+      const copy = { ...prev };
+      if (next === 0) {
+        delete copy[itemId];
+      } else {
+        copy[itemId] = next;
+      }
+      return copy;
+    });
+  };
+
+  const handleAddOneOff = () => {
+    if (!oneOffName.trim() || !oneOffPrice) return;
+    setOneOffItems((prev) => [
+      ...prev,
+      {
+        id: 'custom-' + Date.now(),
+        nameDe: oneOffName.trim(),
+        nameAr: oneOffName.trim(),
+        qty: 1,
+        priceEur: Number(oneOffPrice) || 0,
+        costEur: Number(oneOffCost) || 0
+      }
+    ]);
+    setOneOffName('');
+    setOneOffPrice('');
+    setOneOffCost('');
+    showNotification('Sonderposition zum Bon hinzugefügt.');
+  };
+
+  // Current Order Totals
+  const selectedOil = selectedOilId === 'none' ? null : oils.find((o) => o.id === selectedOilId) || oils[0];
+
+  const currentTotals = useMemo(() => {
+    const oilPrice = selectedOil ? selectedOil.priceEur * Number(liters || 0) : 0;
+    const oilCost = selectedOil ? selectedOil.costEur * Number(liters || 0) : 0;
+
+    let itemsPrice = 0;
+    let itemsCost = 0;
+    const lineItems = [];
+
+    Object.entries(cartQuantities).forEach(([itemId, qty]) => {
+      const found = catalogItems.find((c) => c.id === itemId);
+      if (found && qty > 0) {
+        itemsPrice += found.priceEur * qty;
+        itemsCost += found.costEur * qty;
+        lineItems.push({
+          nameDe: found.de,
+          nameAr: found.ar,
+          qty,
+          priceEur: Number((found.priceEur * qty).toFixed(2)),
+          costEur: Number((found.costEur * qty).toFixed(2))
+        });
+      }
+    });
+
+    oneOffItems.forEach((custom) => {
+      itemsPrice += custom.priceEur * custom.qty;
+      itemsCost += custom.costEur * custom.qty;
+      lineItems.push(custom);
+    });
+
+    const discount = Math.max(0, Number(discountEur) || 0);
+    const totalEur = Math.max(0, Number((oilPrice + itemsPrice - discount).toFixed(2)));
+    const costEur = Number((oilCost + itemsCost).toFixed(2));
+    const profitEur = Number((totalEur - costEur).toFixed(2));
+    const totalIqd = Math.round(totalEur * (branding.iqdRate || 1430));
+
+    return { totalEur, costEur, profitEur, totalIqd, lineItems, discount };
+  }, [selectedOil, liters, cartQuantities, oneOffItems, catalogItems, discountEur, branding.iqdRate]);
+
+  // Translate Note Helper
+  const handleTranslateNote = () => {
+    if (!noteRaw.trim()) return;
+    const match = DICTIONARY_PHRASES.find(
+      (p) =>
+        p.ar.includes(noteRaw.trim()) ||
+        p.de.toLowerCase().includes(noteRaw.trim().toLowerCase())
+    );
+    if (match) {
+      setNoteTranslated(`${match.de} | ${match.ar}`);
+    } else {
+      const hasArabic = /[\u0600-\u06FF]/.test(noteRaw);
+      setNoteTranslated(hasArabic ? `[DE]: ${noteRaw}` : `[AR]: ${noteRaw}`);
+    }
+  };
+
+  // Checkout Order
+  const handleCheckout = (e) => {
+    e.preventDefault();
+    if (!plate.trim()) {
+      showNotification(
+        lang === 'de' ? 'Bitte Autokennzeichen eingeben!' : 'يرجى إدخال رقم السيارة!',
+        'error'
+      );
+      return;
+    }
+
+    const usedLiters = selectedOil ? Number(liters) || 0 : 0;
+
+    const newOrder = {
+      id: 'BON-' + Date.now().toString().slice(-6),
+      plate: plate.trim().toUpperCase(),
+      mileage: Number(mileage) || 0,
+      phone: phone.trim(),
+      pit: selectedPit,
+      oilId: selectedOil ? selectedOil.id : 'none',
+      oilName: selectedOil ? selectedOil.name : 'Nur Teile / Reifen / Service',
+      liters: usedLiters,
+      lineItems: currentTotals.lineItems,
+      discountEur: currentTotals.discount,
+      paymentMethod,
+      totalEur: currentTotals.totalEur,
+      costEur: currentTotals.costEur,
+      profitEur: currentTotals.profitEur,
+      noteRaw,
+      noteTranslated: noteTranslated || noteRaw,
+      createdAt: new Date().toISOString(),
+      closedInZBon: false
+    };
+
+    const updatedDrums = { ...drumLevels };
+    if (selectedOil && updatedDrums[selectedOil.id] !== undefined) {
+      updatedDrums[selectedOil.id] = Math.max(
+        0,
+        Number((updatedDrums[selectedOil.id] - usedLiters).toFixed(1))
+      );
+    }
+
+    const nextOrders = [newOrder, ...orders];
+    setOrders(nextOrders);
+    setDrumLevels(updatedDrums);
+    setLastReceipt(newOrder);
+
+    try {
+      localStorage.setItem('viyan_pro_orders', JSON.stringify(nextOrders));
+      localStorage.setItem('viyan_pro_drums', JSON.stringify(updatedDrums));
+    } catch (err) {
+      console.error(err);
+    }
+
+    showNotification(`Bon ${newOrder.id} verbucht (${newOrder.totalEur.toFixed(2)} €)!`);
+
+    // Reset POS Form
+    setPlate('');
+    setMileage('');
+    setPhone('+964 ');
+    setCartQuantities({});
+    setOneOffItems([]);
+    setDiscountEur(0);
+    setNoteRaw('');
+    setNoteTranslated('');
+  };
+
+  const handleRefillDrum = (oilId) => {
+    const updatedDrums = { ...drumLevels, [oilId]: 208 };
+    setDrumLevels(updatedDrums);
+    localStorage.setItem('viyan_pro_drums', JSON.stringify(updatedDrums));
+    showNotification(`Neues 208L Fass (${oilId.toUpperCase()}) angeschlossen!`);
+  };
+
+  const handleAddByproduct = (e) => {
+    e.preventDefault();
+    const localEntry = {
+      id: 'BY-' + Date.now().toString().slice(-5),
+      desc: byproductDesc,
+      amountEur: Number(byproductEur) || 0,
+      createdAt: new Date().toISOString(),
+      closedInZBon: false
+    };
+    const nextBy = [localEntry, ...byproducts];
+    setByproducts(nextBy);
+    localStorage.setItem('viyan_pro_byproducts', JSON.stringify(nextBy));
+    showNotification(`+${localEntry.amountEur.toFixed(2)} € Nebeneinnahme verbucht!`);
+  };
+
+  // Shift Metrics
+  const openOrders = useMemo(() => orders.filter((o) => !o.closedInZBon), [orders]);
+  const openByproducts = useMemo(() => byproducts.filter((b) => !b.closedInZBon), [byproducts]);
+
+  const shiftStats = useMemo(() => {
+    const oilRevenue = openOrders.reduce((sum, o) => sum + (o.totalEur || 0), 0);
+    const oilProfit = openOrders.reduce((sum, o) => sum + (o.profitEur || 0), 0);
+    const byproductRevenue = openByproducts.reduce((sum, b) => sum + (b.amountEur || 0), 0);
+
+    const cashTotal =
+      openOrders
+        .filter((o) => o.paymentMethod !== 'card')
+        .reduce((sum, o) => sum + (o.totalEur || 0), 0) + byproductRevenue;
+
+    const cardTotal = openOrders
+      .filter((o) => o.paymentMethod === 'card')
+      .reduce((sum, o) => sum + (o.totalEur || 0), 0);
+
+    const litersByOil = { '5w30': 0, '5w40': 0, '10w40': 0 };
+    openOrders.forEach((o) => {
+      if (litersByOil[o.oilId] !== undefined) {
+        litersByOil[o.oilId] += Number(o.liters || 0);
+      }
+    });
+
+    const totalRevenueEur = Number((oilRevenue + byproductRevenue).toFixed(2));
+    return {
+      totalRevenueEur,
+      totalRevenueIqd: Math.round(totalRevenueEur * (branding.iqdRate || 1430)),
+      totalProfitEur: Number((oilProfit + byproductRevenue).toFixed(2)),
+      cashTotal: Number(cashTotal.toFixed(2)),
+      cardTotal: Number(cardTotal.toFixed(2)),
+      carCount: openOrders.length,
+      byproductRevenue,
+      litersByOil
+    };
+  }, [openOrders, openByproducts, branding.iqdRate]);
+
+  // Create Z-Bon
+  const handleCreateZBon = () => {
+    if (openOrders.length === 0 && openByproducts.length === 0) {
+      showNotification('Keine offenen Buchungen für einen Z-Bon vorhanden.', 'error');
+      return;
+    }
+
+    const zNumber =
+      'Z-' + new Date().toISOString().slice(0, 10).replace(/-/g, '') + '-' + (zBons.length + 1);
+
+    const localZ = {
+      id: zNumber,
+      zNumber,
+      createdAt: new Date().toISOString(),
+      carCount: shiftStats.carCount,
+      totalRevenueEur: shiftStats.totalRevenueEur,
+      totalRevenueIqd: shiftStats.totalRevenueIqd,
+      totalProfitEur: shiftStats.totalProfitEur,
+      cashTotal: shiftStats.cashTotal,
+      cardTotal: shiftStats.cardTotal,
+      byproductRevenue: shiftStats.byproductRevenue,
+      litersByOil: shiftStats.litersByOil
+    };
+
+    const nextZBons = [localZ, ...zBons];
+    const nextOrders = orders.map((o) => ({ ...o, closedInZBon: true }));
+    const nextBy = byproducts.map((b) => ({ ...b, closedInZBon: true }));
+
+    setZBons(nextZBons);
+    setOrders(nextOrders);
+    setByproducts(nextBy);
+
+    localStorage.setItem('viyan_pro_zbons', JSON.stringify(nextZBons));
+    localStorage.setItem('viyan_pro_orders', JSON.stringify(nextOrders));
+    localStorage.setItem('viyan_pro_byproducts', JSON.stringify(nextBy));
+    showNotification(`Z-Bon ${zNumber} erfolgreich abgeschlossen!`);
+  };
+
+  const confirmDeleteOrder = () => {
+    if (!isChefUnlocked || !deleteOrderId) return;
+    const nextOrders = orders.filter((o) => o.id !== deleteOrderId);
+    setOrders(nextOrders);
+    localStorage.setItem('viyan_pro_orders', JSON.stringify(nextOrders));
+    setDeleteOrderId(null);
+    showNotification('Buchung vom Chef storniert.', 'info');
+  };
+
+  const buildWhatsappUrl = (order) => {
+    const cleanPhone = (order.phone || '').replace(/[^0-9]/g, '');
+    const nextKm = (Number(order.mileage) || 0) + 7000;
+    const msg =
+      `مرحباً من ${branding.companyName} 🇩🇪🇮🇶%0A` +
+      `لقد حان موعد الصيانة وتبديل الزيت لسيارتك رقم (${order.plate}).%0A` +
+      `آخر قراءة للعداد كانت: ${order.mileage} كم (الموعد القادم: ${nextKm} كم).%0A` +
+      `العنوان: ${branding.address}%0A` +
+      `نحن بانتظاركم!%0A%0A` +
+      `Hallo von ${branding.companyName}! Zeit für Ihren nächsten Ölwechsel für Kennzeichen ${order.plate} (letzter KM: ${order.mileage} km).`;
+    return `https://wa.me/${cleanPhone}?text=${msg}`;
+  };
+
+  const categories = useMemo(() => {
+    const set = new Set(catalogItems.map((i) => i.category));
+    return ['ALL', ...Array.from(set)];
+  }, [catalogItems]);
+
+  const filteredCatalog = useMemo(() => {
+    if (selectedCategoryFilter === 'ALL') return catalogItems;
+    return catalogItems.filter((i) => i.category === selectedCategoryFilter);
+  }, [catalogItems, selectedCategoryFilter]);
+
+  const filteredCustomers = useMemo(() => {
+    if (!customerSearch.trim()) return orders;
+    const q = customerSearch.toLowerCase();
+    return orders.filter(
+      (o) =>
+        (o.plate || '').toLowerCase().includes(q) ||
+        (o.phone || '').toLowerCase().includes(q)
+    );
+  }, [orders, customerSearch]);
+
+  return (
+    <div dir={isRtl ? 'rtl' : 'ltr'} className="min-h-screen bg-slate-950 text-slate-100 pb-16">
+      {/* Print Styles */}
+      <style>{`
+        @media print {
+          body * { visibility: hidden; }
+          #printable-receipt, #printable-receipt * { visibility: visible; }
+          #printable-receipt {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 80mm;
+            max-width: 100%;
+            background: white !important;
+            color: black !important;
+            box-shadow: none !important;
+            border: none !important;
+          }
+          .no-print { display: none !important; }
+        }
+      `}</style>
+
+      {/* Toast Notification */}
+      {toast && (
+        <div
+          className={`fixed bottom-5 right-5 z-50 px-5 py-3.5 rounded-2xl shadow-2xl flex items-center gap-2.5 text-sm font-bold border ${
+            toast.type === 'error'
+              ? 'bg-red-950 border-red-500 text-red-200'
+              : 'bg-slate-900 border-amber-500 text-amber-300'
+          }`}
+        >
+          {toast.type === 'error' ? (
+            <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" />
+          ) : (
+            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          )}
+          <span>{toast.message}</span>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteOrderId && (
+        <div className="fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 max-w-sm w-full space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-white flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-red-400" /> Buchung stornieren?
+              </h3>
+              <button onClick={() => setDeleteOrderId(null)} className="text-slate-400 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <p className="text-xs text-slate-400">
+              Möchtest du den Bon <strong className="text-white">{deleteOrderId}</strong> wirklich endgültig löschen?
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setDeleteOrderId(null)}
+                className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-bold"
+              >
+                Abbrechen
+              </button>
+              <button
+                onClick={confirmDeleteOrder}
+                className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold"
+              >
+                Ja, löschen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Top Header */}
+      <header className="bg-slate-900 border-b border-slate-800 sticky top-0 z-30">
+        <div className="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            {branding.logoDataUrl ? (
+              <img
+                src={branding.logoDataUrl}
+                alt="Logo"
+                className="w-10 h-10 rounded-xl object-contain bg-white p-1"
+              />
+            ) : (
+              <div className="w-10 h-10 rounded-xl bg-amber-500 flex items-center justify-center text-slate-950 font-black">
+                <Droplet className="w-6 h-6" />
+              </div>
+            )}
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="font-bold text-lg tracking-tight text-white">{branding.companyName}</h1>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                  PRO v2.0
+                </span>
+              </div>
+              <p className="text-xs text-slate-400">{branding.subtitle}</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {isChefUnlocked && (
+              <span className="text-xs bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 px-3 py-1.5 rounded-xl font-bold flex items-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5" /> Chef-Modus aktiv
+              </span>
+            )}
+            <button
+              onClick={() => setLang(lang === 'de' ? 'ar' : 'de')}
+              className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3.5 py-2 rounded-xl text-sm font-semibold text-amber-400 transition"
+            >
+              <Languages className="w-4 h-4" />
+              {lang === 'de' ? 'العربية (AR)' : 'Deutsch (DE)'}
+            </button>
+          </div>
+        </div>
+
+        {/* Main Navigation */}
+        <div className="max-w-7xl mx-auto px-4 flex gap-2 overflow-x-auto pb-2.5">
+          {[
+            { id: 'pos', label: t.posTab, icon: Receipt },
+            { id: 'customers', label: t.customersTab, icon: MessageCircle },
+            { id: 'zbon', label: t.zbonTab, icon: FileText },
+            { id: 'chef', label: t.chefTab, icon: ShieldCheck }
+          ].map((tab) => {
+            const Icon = tab.icon;
+            const active = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition ${
+                  active
+                    ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20'
+                    : 'bg-slate-800/70 text-slate-300 hover:bg-slate-800'
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+      </header>
+
+      <main className="max-w-7xl mx-auto px-4 pt-6">
+        {/* TAB 1: POS / KASSE */}
+        {activeTab === 'pos' && (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <form onSubmit={handleCheckout} className="lg:col-span-8 space-y-6">
+              {/* Vehicle Data & Pit */}
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-sm font-bold text-amber-400 flex items-center gap-2">
+                    <Car className="w-4 h-4" /> {t.vehicleHeader}
+                  </span>
+                  <div className="flex gap-2">
+                    {[1, 2, 3].map((pitNum) => (
+                      <button
+                        type="button"
+                        key={pitNum}
+                        onClick={() => setSelectedPit(pitNum)}
+                        className={`px-4 py-2 rounded-xl text-sm font-bold border transition ${
+                          selectedPit === pitNum
+                            ? 'bg-amber-500 text-slate-950 border-amber-400'
+                            : 'bg-slate-950 text-slate-300 border-slate-700 hover:border-slate-500'
+                        }`}
+                      >
+                        {t.pit} {pitNum}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-xs text-slate-400 mb-1">{t.plateLabel}</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder={t.platePlaceholder}
+                      value={plate}
+                      onChange={(e) => setPlate(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-bold focus:border-amber-500 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-slate-400 mb-1 flex items-center gap-1">
+                      <Gauge className="w-3.5 h-3.5 text-amber-400" /> {t.kmLabel}
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      placeholder="z.B. 85000"
+                      value={mileage}
+                      onChange={(e) => setMileage(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-bold focus:border-amber-500 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-slate-400 mb-1 flex items-center gap-1">
+                      <Phone className="w-3.5 h-3.5 text-emerald-400" /> {t.phoneLabel}
+                    </label>
+                    <input
+                      type="tel"
+                      required
+                      placeholder="+964 750 ..."
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-bold focus:border-amber-500 focus:outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Oil Selection (Including "No Oil / Parts Only" option!) */}
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h2 className="text-sm font-bold text-amber-400">{t.selectOil}</h2>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedOilId('none')}
+                    className={`text-xs px-3.5 py-2 rounded-xl font-bold border transition ${
+                      selectedOilId === 'none'
+                        ? 'bg-sky-500 text-slate-950 border-sky-400'
+                        : 'bg-slate-950 text-slate-300 border-slate-700 hover:border-slate-500'
+                    }`}
+                  >
+                    {t.noOilNeeded}
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {oils.map((oil) => {
+                    const selected = oil.id === selectedOilId;
+                    return (
+                      <button
+                        type="button"
+                        key={oil.id}
+                        onClick={() => setSelectedOilId(oil.id)}
+                        className={`p-4 rounded-xl border text-start transition ${
+                          selected
+                            ? 'bg-amber-500/15 border-amber-500 ring-1 ring-amber-500'
+                            : 'bg-slate-950 border-slate-800 hover:border-slate-700'
+                        }`}
+                      >
+                        <div className="font-bold text-white text-sm">{oil.name}</div>
+                        <div className="text-xs text-slate-400 mt-1">{oil.spec}</div>
+                        <div className="mt-3 flex items-baseline justify-between">
+                          <span className="text-amber-400 font-extrabold text-base">
+                            {oil.priceEur.toFixed(2)} € / L
+                          </span>
+                          <span className="text-[11px] text-slate-400">
+                            {Math.round(oil.priceEur * (branding.iqdRate || 1430)).toLocaleString()} IQD
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {selectedOilId !== 'none' && (
+                  <div className="pt-2">
+                    <label className="block text-xs text-slate-400 mb-2">{t.litersLabel}</label>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {[4, 4.5, 5, 5.5, 6, 7, 8].map((preset) => (
+                        <button
+                          type="button"
+                          key={preset}
+                          onClick={() => setLiters(preset)}
+                          className={`px-3.5 py-2 rounded-xl text-sm font-bold border ${
+                            Number(liters) === preset
+                              ? 'bg-amber-500 text-slate-950 border-amber-400'
+                              : 'bg-slate-950 text-slate-300 border-slate-700'
+                          }`}
+                        >
+                          {preset} L
+                        </button>
+                      ))}
+                      <input
+                        type="number"
+                        step="0.1"
+                        min="0.5"
+                        max="50"
+                        value={liters}
+                        onChange={(e) => setLiters(e.target.value)}
+                        className="w-28 bg-slate-950 border border-amber-500/60 rounded-xl px-3 py-2 text-center font-extrabold text-amber-400"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Dynamic Catalog: Filters, Tires, Parts & Services with Quantity Stepper */}
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h2 className="text-sm font-bold text-amber-400 flex items-center gap-2">
+                    <Wrench className="w-4 h-4" /> {t.extrasLabel}
+                  </h2>
+                  <div className="flex flex-wrap gap-1.5">
+                    {categories.map((cat) => (
+                      <button
+                        type="button"
+                        key={cat}
+                        onClick={() => setSelectedCategoryFilter(cat)}
+                        className={`text-xs px-3 py-1.5 rounded-lg font-bold transition ${
+                          selectedCategoryFilter === cat
+                            ? 'bg-amber-500 text-slate-950'
+                            : 'bg-slate-950 text-slate-400 border border-slate-800'
+                        }`}
+                      >
+                        {cat === 'ALL' ? (lang === 'de' ? 'Alle' : 'الكل') : cat}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {filteredCatalog.map((item) => {
+                    const qty = cartQuantities[item.id] || 0;
+                    return (
+                      <div
+                        key={item.id}
+                        className={`flex items-center justify-between p-3.5 rounded-xl border transition ${
+                          qty > 0
+                            ? 'bg-emerald-500/15 border-emerald-500 text-white'
+                            : 'bg-slate-950 border-slate-800 text-slate-300'
+                        }`}
+                      >
+                        <div className="pr-2">
+                          <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-slate-800 text-amber-400 font-bold">
+                            {item.category}
+                          </span>
+                          <div className="text-sm font-bold mt-1">
+                            {lang === 'de' ? item.de : item.ar}
+                          </div>
+                          <div className="text-xs font-bold text-emerald-400">
+                            {item.priceEur.toFixed(2)} € / Stk.
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => updateItemQty(item.id, -1)}
+                            className="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 font-black text-white"
+                          >
+                            -
+                          </button>
+                          <span className="w-6 text-center font-black text-sm">{qty}</span>
+                          <button
+                            type="button"
+                            onClick={() => updateItemQty(item.id, 1)}
+                            className="w-9 h-9 rounded-xl bg-emerald-600 hover:bg-emerald-500 font-black text-white"
+                          >
+                            +
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Quick Ad-Hoc Custom Item */}
+                <div className="pt-3 border-t border-slate-800">
+                  <div className="text-xs font-bold text-slate-400 mb-2">{t.customOneOffTitle}</div>
+                  <div className="flex flex-wrap gap-2">
+                    <input
+                      type="text"
+                      placeholder="Bezeichnung (z.B. Scheibenwischer / Sonderarbeit)"
+                      value={oneOffName}
+                      onChange={(e) => setOneOffName(e.target.value)}
+                      className="flex-1 min-w-[200px] bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white"
+                    />
+                    <input
+                      type="number"
+                      step="0.5"
+                      placeholder="EK (€)"
+                      value={oneOffCost}
+                      onChange={(e) => setOneOffCost(e.target.value)}
+                      className="w-20 bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-slate-300"
+                    />
+                    <input
+                      type="number"
+                      step="0.5"
+                      placeholder="VK (€)"
+                      value={oneOffPrice}
+                      onChange={(e) => setOneOffPrice(e.target.value)}
+                      className="w-24 bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs font-bold text-emerald-400"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddOneOff}
+                      className="bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold text-xs px-3.5 py-2 rounded-xl flex items-center gap-1"
+                    >
+                      <Plus className="w-4 h-4" /> Hinzufügen
+                    </button>
+                  </div>
+                  {oneOffItems.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {oneOffItems.map((c) => (
+                        <span
+                          key={c.id}
+                          className="text-xs bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 px-3 py-1 rounded-lg flex items-center gap-2"
+                        >
+                          {c.nameDe}: {c.priceEur.toFixed(2)} €
+                          <button
+                            type="button"
+                            onClick={() => setOneOffItems(oneOffItems.filter((x) => x.id !== c.id))}
+                            className="text-red-400 font-bold"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Payment Method, Discount & Bilingual Notes */}
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 mb-1.5">
+                      {t.paymentMethodLabel}
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setPaymentMethod('cash')}
+                        className={`py-2.5 px-3 rounded-xl text-xs font-bold border flex items-center justify-center gap-1.5 ${
+                          paymentMethod === 'cash'
+                            ? 'bg-emerald-500/20 border-emerald-500 text-emerald-300'
+                            : 'bg-slate-950 border-slate-800 text-slate-400'
+                        }`}
+                      >
+                        <Wallet className="w-4 h-4" /> {t.cash}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPaymentMethod('card')}
+                        className={`py-2.5 px-3 rounded-xl text-xs font-bold border flex items-center justify-center gap-1.5 ${
+                          paymentMethod === 'card'
+                            ? 'bg-sky-500/20 border-sky-500 text-sky-300'
+                            : 'bg-slate-950 border-slate-800 text-slate-400'
+                        }`}
+                      >
+                        <CreditCard className="w-4 h-4" /> {t.card}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 mb-1.5 flex items-center gap-1">
+                      <Percent className="w-3.5 h-3.5 text-amber-400" /> {t.discountLabel}
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.5"
+                      value={discountEur}
+                      onChange={(e) => setDiscountEur(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-sm font-bold text-amber-400"
+                    />
+                  </div>
+                </div>
+
+                {/* Notes */}
+                <div className="space-y-2 pt-2 border-t border-slate-800">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-amber-400">{t.notesLabel}</label>
+                    <button
+                      type="button"
+                      onClick={handleTranslateNote}
+                      className="text-xs bg-slate-800 hover:bg-slate-700 text-amber-400 px-3 py-1 rounded-lg font-semibold flex items-center gap-1"
+                    >
+                      <Languages className="w-3.5 h-3.5" /> {t.translateBtn}
+                    </button>
+                  </div>
+
+                  <div className="flex flex-wrap gap-1.5">
+                    {DICTIONARY_PHRASES.map((phrase, idx) => (
+                      <button
+                        type="button"
+                        key={idx}
+                        onClick={() => {
+                          setNoteRaw(lang === 'ar' ? phrase.ar : phrase.de);
+                          setNoteTranslated(`${phrase.de} | ${phrase.ar}`);
+                        }}
+                        className="text-[11px] bg-slate-950 hover:bg-slate-800 border border-slate-800 px-2.5 py-1 rounded-lg text-slate-300"
+                      >
+                        {lang === 'ar' ? phrase.ar : phrase.de}
+                      </button>
+                    ))}
+                  </div>
+
+                  <input
+                    type="text"
+                    value={noteRaw}
+                    onChange={(e) => setNoteRaw(e.target.value)}
+                    placeholder="Notiz eingeben oder oben auswählen..."
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white"
+                  />
+                  {noteTranslated && (
+                    <div className="text-xs bg-slate-950 border border-emerald-500/30 text-emerald-300 p-2 rounded-xl">
+                      {noteTranslated}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Total Bar */}
+              <div className="bg-gradient-to-r from-amber-500 to-amber-400 rounded-2xl p-5 text-slate-950 flex flex-wrap items-center justify-between gap-4 shadow-xl">
+                <div>
+                  <div className="text-xs font-bold uppercase opacity-80">{t.total}</div>
+                  <div className="text-3xl font-black">
+                    {currentTotals.totalEur.toFixed(2)} €{' '}
+                    <span className="text-base font-extrabold opacity-80">
+                      ({currentTotals.totalIqd.toLocaleString()} IQD)
+                    </span>
+                  </div>
+                </div>
+                <button
+                  type="submit"
+                  className="bg-slate-950 hover:bg-slate-900 text-amber-400 font-bold px-6 py-4 rounded-xl flex items-center gap-2 shadow-lg transition"
+                >
+                  <CheckCircle2 className="w-5 h-5" />
+                  {t.checkoutBtn}
+                </button>
+              </div>
+            </form>
+
+            {/* Right Sidebar: 208L Drums & Custom Branded Receipt */}
+            <div className="lg:col-span-4 space-y-6">
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
+                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                  <Droplet className="w-4 h-4 text-amber-400" /> {t.drumStockTitle}
+                </h3>
+                {oils.map((oil) => {
+                  const left = drumLevels[oil.id] ?? 208;
+                  const pct = Math.min(100, Math.round((left / 208) * 100));
+                  const low = left < 35;
+                  return (
+                    <div key={oil.id} className="bg-slate-950 border border-slate-800 rounded-xl p-3.5">
+                      <div className="flex items-center justify-between text-xs font-bold mb-1.5">
+                        <span className="text-slate-200">{oil.id.toUpperCase()}</span>
+                        <span className={low ? 'text-red-400' : 'text-emerald-400'}>
+                          {left.toFixed(1)} L / 208 L
+                        </span>
+                      </div>
+                      <div className="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full transition-all ${low ? 'bg-red-500' : 'bg-amber-500'}`}
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                      {isChefUnlocked && (
+                        <button
+                          type="button"
+                          onClick={() => handleRefillDrum(oil.id)}
+                          className="mt-2 text-[11px] text-amber-400 hover:underline flex items-center gap-1"
+                        >
+                          <RefreshCw className="w-3 h-3" /> Neues 208L Fass anschließen (Reset 208L)
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Branded Printable Receipt */}
+              {lastReceipt && (
+                <div
+                  id="printable-receipt"
+                  className="bg-white text-slate-900 rounded-2xl p-5 shadow-xl border-2 border-amber-500 space-y-3"
+                >
+                  <div className="text-center border-b border-dashed border-slate-300 pb-3 space-y-1">
+                    {branding.logoDataUrl && (
+                      <img
+                        src={branding.logoDataUrl}
+                        alt="Firmalogo"
+                        className="h-14 mx-auto object-contain mb-1"
+                      />
+                    )}
+                    <div className="font-black text-base tracking-wide">{branding.companyName}</div>
+                    <div className="text-[11px] text-slate-600">{branding.address}</div>
+                    <div className="text-[11px] font-semibold text-slate-700">Tel: {branding.phone}</div>
+                    <div className="text-[10px] text-slate-500 pt-1">
+                      {new Date(lastReceipt.createdAt).toLocaleString()} • Grube {lastReceipt.pit}
+                    </div>
+                    <div className="text-xs font-black bg-slate-100 py-1 rounded">
+                      Kennzeichen: {lastReceipt.plate} | {Number(lastReceipt.mileage).toLocaleString()} km
+                    </div>
+                  </div>
+
+                  <div className="text-xs space-y-1.5">
+                    {lastReceipt.oilId !== 'none' && (
+                      <div className="flex justify-between font-bold">
+                        <span>
+                          {lastReceipt.oilName} ({lastReceipt.liters} L)
+                        </span>
+                      </div>
+                    )}
+
+                    {(lastReceipt.lineItems || []).map((li, i) => (
+                      <div key={i} className="flex justify-between text-slate-700">
+                        <span>
+                          {li.qty}x {li.nameDe}
+                        </span>
+                        <span>{li.priceEur.toFixed(2)} €</span>
+                      </div>
+                    ))}
+
+                    {lastReceipt.discountEur > 0 && (
+                      <div className="flex justify-between text-emerald-700 font-semibold">
+                        <span>Rabatt / خصم</span>
+                        <span>-{lastReceipt.discountEur.toFixed(2)} €</span>
+                      </div>
+                    )}
+
+                    {lastReceipt.noteTranslated && (
+                      <div className="bg-slate-100 p-2 rounded text-[11px] mt-1">
+                        {lastReceipt.noteTranslated}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="border-t border-dashed border-slate-300 pt-2 flex justify-between font-black text-sm">
+                    <span>TOTAL ({lastReceipt.paymentMethod === 'card' ? 'KARTE' : 'BAR'})</span>
+                    <span>
+                      {lastReceipt.totalEur.toFixed(2)} € /{' '}
+                      {Math.round(lastReceipt.totalEur * (branding.iqdRate || 1430)).toLocaleString()} IQD
+                    </span>
+                  </div>
+
+                  <p className="text-[10px] text-center text-slate-600 pt-1 font-medium">
+                    {branding.footerNote}
+                  </p>
+                  <p className="text-[9px] text-center text-slate-400">{t.nextServiceHint}</p>
+
+                  <button
+                    type="button"
+                    onClick={() => window.print()}
+                    className="w-full bg-slate-900 text-white py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 no-print"
+                  >
+                    <Printer className="w-4 h-4" /> Beleg drucken (80mm / A4)
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 2: CUSTOMERS & 3.5-MONTH WHATSAPP REMINDER */}
+        {activeTab === 'customers' && (
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-bold text-white">{t.customersTab}</h2>
+                <p className="text-xs text-slate-400">
+                  Suche nach Kennzeichen oder Telefonnummer. Nach 105 Tagen (3,5 Monaten) erscheint der Erinnerungs-Status.
+                </p>
+              </div>
+              <div className="relative w-full sm:w-72">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                <input
+                  type="text"
+                  placeholder="Kennzeichen / Telefon suchen..."
+                  value={customerSearch}
+                  onChange={(e) => setCustomerSearch(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-sm text-white"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {filteredCustomers.map((ord) => {
+                const daysAgo = Math.floor(
+                  (Date.now() - new Date(ord.createdAt).getTime()) / (1000 * 60 * 60 * 24)
+                );
+                const isDue = daysAgo >= 105;
+
+                return (
+                  <div
+                    key={ord.id}
+                    className={`p-4 rounded-xl border flex flex-wrap items-center justify-between gap-4 ${
+                      isDue ? 'bg-amber-500/10 border-amber-500/50' : 'bg-slate-950 border-slate-800'
+                    }`}
+                  >
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-black text-white text-base">{ord.plate}</span>
+                        <span
+                          className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full ${
+                            isDue ? 'bg-amber-500 text-slate-950' : 'bg-slate-800 text-slate-300'
+                          }`}
+                        >
+                          {isDue ? `${t.dueForService} (${daysAgo} Tage)` : `Vor ${daysAgo} Tagen`}
+                        </span>
+                      </div>
+                      <div className="text-xs text-slate-400 flex flex-wrap gap-4">
+                        <span>
+                          Service: {ord.oilName} {ord.liters > 0 ? `(${ord.liters} L)` : ''}
+                        </span>
+                        <span>KM: {Number(ord.mileage).toLocaleString()} km</span>
+                        <span>Tel: {ord.phone}</span>
+                      </div>
+                    </div>
+
+                    <a
+                      href={buildWhatsappUrl(ord)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-4 py-2.5 rounded-xl flex items-center gap-2 transition"
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                      {t.sendWhatsapp}
+                    </a>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 3: Z-BON / TAGESABSCHLUSS */}
+        {activeTab === 'zbon' && (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div className="lg:col-span-5 bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
+              <h2 className="text-base font-bold text-amber-400 flex items-center gap-2">
+                <FileText className="w-5 h-5" /> Aktuelle offene Schicht
+              </h2>
+
+              <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-slate-400">{t.carsToday}:</span>
+                  <span className="font-bold text-white">{shiftStats.carCount} Autos</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Bar-Kasse (Cash):</span>
+                  <span className="font-bold text-emerald-400">{shiftStats.cashTotal.toFixed(2)} €</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Karte / FastPay:</span>
+                  <span className="font-bold text-sky-400">{shiftStats.cardTotal.toFixed(2)} €</span>
+                </div>
+                <div className="border-t border-slate-800 pt-2 flex justify-between text-xs text-slate-400">
+                  <span>Verbrauch 5W-30 / 5W-40 / 10W-40:</span>
+                  <span className="text-white font-semibold">
+                    {shiftStats.litersByOil['5w30'].toFixed(1)}L / {shiftStats.litersByOil['5w40'].toFixed(1)}L /{' '}
+                    {shiftStats.litersByOil['10w40'].toFixed(1)}L
+                  </span>
+                </div>
+                <div className="border-t border-slate-800 pt-2 flex justify-between text-base font-black text-amber-400">
+                  <span>{t.revenueToday}:</span>
+                  <span>
+                    {shiftStats.totalRevenueEur.toFixed(2)} € ({shiftStats.totalRevenueIqd.toLocaleString()} IQD)
+                  </span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleCreateZBon}
+                className="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-black py-3.5 rounded-xl transition"
+              >
+                {t.createZBon}
+              </button>
+            </div>
+
+            <div className="lg:col-span-7 bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
+              <h2 className="text-base font-bold text-white">{t.zbonHistory}</h2>
+              {zBons.length === 0 ? (
+                <p className="text-xs text-slate-400">Noch keine Z-Bons erstellt.</p>
+              ) : (
+                <div className="space-y-3">
+                  {zBons.map((z) => (
+                    <div key={z.id} className="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="font-black text-amber-400">{z.zNumber}</span>
+                        <span className="text-xs text-slate-400">
+                          {new Date(z.createdAt).toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                        <div>
+                          <span className="text-slate-400">Autos: </span>
+                          <strong className="text-white">{z.carCount}</strong>
+                        </div>
+                        <div>
+                          <span className="text-slate-400">Bar: </span>
+                          <strong className="text-white">{(z.cashTotal || 0).toFixed(2)} €</strong>
+                        </div>
+                        <div>
+                          <span className="text-slate-400">Gesamt: </span>
+                          <strong className="text-amber-400">{z.totalRevenueEur.toFixed(2)} €</strong>
+                        </div>
+                        {isChefUnlocked && (
+                          <div>
+                            <span className="text-slate-400">Gewinn: </span>
+                            <strong className="text-emerald-400">+{z.totalProfitEur.toFixed(2)} €</strong>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 4: CHEF COCKPIT, KATALOG-MANAGER & LOGO/ADRESSE */}
+        {activeTab === 'chef' && (
+          <div>
+            {!isChefUnlocked ? (
+              <div className="max-w-sm mx-auto bg-slate-900 border border-slate-800 rounded-2xl p-6 text-center space-y-4">
+                <div className="w-12 h-12 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center mx-auto">
+                  <Lock className="w-6 h-6" />
+                </div>
+                <h2 className="font-bold text-white">{t.chefLocked}</h2>
+                <p className="text-xs text-slate-400">Standard-PIN zum Testen: 1234</p>
+                <input
+                  type="password"
+                  maxLength={6}
+                  value={pinInput}
+                  onChange={(e) => {
+                    setPinInput(e.target.value);
+                    setPinError('');
+                  }}
+                  placeholder="PIN"
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-center text-xl font-black tracking-widest text-white"
+                />
+                {pinError && <p className="text-xs text-red-400 font-semibold">{pinError}</p>}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (pinInput === CHEF_PIN) {
+                      setIsChefUnlocked(true);
+                      setPinInput('');
+                      setPinError('');
+                      showNotification('Chef-Cockpit entsperrt!');
+                    } else {
+                      setPinError('Falsche PIN! Bitte 1234 eingeben.');
+                    }
+                  }}
+                  className="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-3 rounded-xl"
+                >
+                  {t.unlockBtn}
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {/* Chef Sub-Navigation */}
+                <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-900 border border-slate-800 p-3 rounded-2xl">
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => setChefSubTab('overview')}
+                      className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 ${
+                        chefSubTab === 'overview'
+                          ? 'bg-amber-500 text-slate-950'
+                          : 'bg-slate-950 text-slate-300'
+                      }`}
+                    >
+                      <ShieldCheck className="w-4 h-4" /> Live-Umsatz & Gewinn
+                    </button>
+                    <button
+                      onClick={() => setChefSubTab('catalog')}
+                      className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 ${
+                        chefSubTab === 'catalog'
+                          ? 'bg-amber-500 text-slate-950'
+                          : 'bg-slate-950 text-slate-300'
+                      }`}
+                    >
+                      <PackagePlus className="w-4 h-4" /> Produkte, Reifen & Preise verwalten
+                    </button>
+                    <button
+                      onClick={() => setChefSubTab('branding')}
+                      className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 ${
+                        chefSubTab === 'branding'
+                          ? 'bg-amber-500 text-slate-950'
+                          : 'bg-slate-950 text-slate-300'
+                      }`}
+                    >
+                      <Store className="w-4 h-4" /> Logo, Adresse & Wechselkurs
+                    </button>
+                  </div>
+
+                  <button
+                    onClick={() => setIsChefUnlocked(false)}
+                    className="text-xs text-slate-400 hover:text-white px-3 py-2 flex items-center gap-1"
+                  >
+                    <Unlock className="w-3.5 h-3.5" /> Sperren
+                  </button>
+                </div>
+
+                {/* SUB-TAB A: LIVE OVERVIEW */}
+                {chefSubTab === 'overview' && (
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5">
+                        <div className="text-xs text-slate-400">{t.revenueToday}</div>
+                        <div className="text-2xl font-black text-white mt-1">
+                          {shiftStats.totalRevenueEur.toFixed(2)} €
+                        </div>
+                        <div className="text-xs text-slate-400 mt-1">
+                          Bar: {shiftStats.cashTotal.toFixed(2)} € • Karte: {shiftStats.cardTotal.toFixed(2)} €
+                        </div>
+                      </div>
+                      <div className="bg-slate-900 border border-emerald-500/40 rounded-2xl p-5">
+                        <div className="text-xs text-emerald-400 font-bold">{t.profitToday}</div>
+                        <div className="text-2xl font-black text-emerald-400 mt-1">
+                          +{shiftStats.totalProfitEur.toFixed(2)} €
+                        </div>
+                        <div className="text-xs text-slate-400 mt-1">Echter Reingewinn nach EK</div>
+                      </div>
+                      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5">
+                        <div className="text-xs text-slate-400">{t.carsToday}</div>
+                        <div className="text-2xl font-black text-amber-400 mt-1">
+                          {shiftStats.carCount}
+                        </div>
+                        <div className="text-xs text-slate-400 mt-1">Grube 1 – 3 aktiv</div>
+                      </div>
+                    </div>
+
+                    {/* Altöl & Fässer */}
+                    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5">
+                      <h3 className="text-sm font-bold text-emerald-400 flex items-center gap-2 mb-3">
+                        <Recycle className="w-4 h-4" /> {t.byproductTitle}
+                      </h3>
+                      <form onSubmit={handleAddByproduct} className="flex flex-wrap gap-3">
+                        <input
+                          type="text"
+                          value={byproductDesc}
+                          onChange={(e) => setByproductDesc(e.target.value)}
+                          className="flex-1 min-w-[220px] bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white"
+                        />
+                        <input
+                          type="number"
+                          value={byproductEur}
+                          onChange={(e) => setByproductEur(e.target.value)}
+                          className="w-28 bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm font-bold text-emerald-400"
+                        />
+                        <button
+                          type="submit"
+                          className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2.5 rounded-xl text-sm"
+                        >
+                          {t.byproductBtn}
+                        </button>
+                      </form>
+                    </div>
+
+                    {/* Live Order Log */}
+                    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3">
+                      <h3 className="text-sm font-bold text-white">Live-Buchungsprotokoll (Alle Gruben)</h3>
+                      <div className="space-y-2">
+                        {orders.map((ord) => (
+                          <div
+                            key={ord.id}
+                            className="bg-slate-950 border border-slate-800 rounded-xl p-3.5 flex flex-wrap items-center justify-between gap-3 text-xs"
+                          >
+                            <div>
+                              <span className="font-bold text-white">{ord.plate}</span> • Grube {ord.pit} •{' '}
+                              <span className="text-amber-400">
+                                {ord.oilName} {ord.liters > 0 ? `(${ord.liters}L)` : ''}
+                              </span>
+                              <div className="text-slate-500 mt-0.5">
+                                {new Date(ord.createdAt).toLocaleString()} • KM: {ord.mileage}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-4">
+                              <div className="text-end">
+                                <div className="font-bold text-white">Umsatz: {ord.totalEur.toFixed(2)} €</div>
+                                <div className="text-emerald-400 font-bold">
+                                  Gewinn: +{ord.profitEur.toFixed(2)} €
+                                </div>
+                              </div>
+                              <button
+                                onClick={() => setDeleteOrderId(ord.id)}
+                                title="Stornieren (Nur Chef)"
+                                className="p-2 text-slate-500 hover:text-red-400"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* SUB-TAB B: DYNAMIC CATALOG MANAGER */}
+                {chefSubTab === 'catalog' && (
+                  <div className="space-y-6">
+                    <div className="bg-slate-900 border border-amber-500/40 rounded-2xl p-5 space-y-4">
+                      <h3 className="text-base font-bold text-amber-400 flex items-center gap-2">
+                        <PackagePlus className="w-5 h-5" /> Neues Teil, Reifen oder neuen Service zur Kasse hinzufügen
+                      </h3>
+                      <p className="text-xs text-slate-400">
+                        Alles, was du hier anlegst (z. B. Reifen, Bremsbeläge, Klimaservice, Batterien), erscheint sofort als anklickbarer Button in der Werkstatt-Kasse.
+                      </p>
+
+                      <form onSubmit={handleAddCatalogItem} className="grid grid-cols-1 sm:grid-cols-6 gap-3">
+                        <div className="sm:col-span-1">
+                          <label className="block text-[11px] text-slate-400 mb-1">Kategorie</label>
+                          <input
+                            type="text"
+                            placeholder="z.B. Reifen"
+                            value={newItemCategory}
+                            onChange={(e) => setNewItemCategory(e.target.value)}
+                            className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white"
+                          />
+                        </div>
+                        <div className="sm:col-span-2">
+                          <label className="block text-[11px] text-slate-400 mb-1">Name auf Deutsch</label>
+                          <input
+                            type="text"
+                            required
+                            placeholder="z.B. Sommerreifen 225/45 R17"
+                            value={newItemDe}
+                            onChange={(e) => setNewItemDe(e.target.value)}
+                            className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white"
+                          />
+                        </div>
+                        <div className="sm:col-span-1">
+                          <label className="block text-[11px] text-slate-400 mb-1">Name auf Arabisch</label>
+                          <input
+                            type="text"
+                            placeholder="إطار صيفي"
+                            value={newItemAr}
+                            onChange={(e) => setNewItemAr(e.target.value)}
+                            className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] text-slate-400 mb-1">Dein EK (€)</label>
+                          <input
+                            type="number"
+                            step="0.1"
+                            required
+                            placeholder="45.00"
+                            value={newItemCost}
+                            onChange={(e) => setNewItemCost(e.target.value)}
+                            className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-slate-300"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] text-slate-400 mb-1">Kunden-VK (€)</label>
+                          <input
+                            type="number"
+                            step="0.1"
+                            required
+                            placeholder="68.00"
+                            value={newItemPrice}
+                            onChange={(e) => setNewItemPrice(e.target.value)}
+                            className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs font-bold text-emerald-400"
+                          />
+                        </div>
+                        <div className="sm:col-span-6 flex justify-end">
+                          <button
+                            type="submit"
+                            className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-5 py-2.5 rounded-xl text-xs flex items-center gap-1.5"
+                          >
+                            <Plus className="w-4 h-4" /> Jetzt in Kasse speichern
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+
+                    {/* Oil Prices Editor */}
+                    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3">
+                      <h3 className="text-sm font-bold text-white">Öl-Literpreise (EK & VK) anpassen</h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        {oils.map((o) => (
+                          <div key={o.id} className="bg-slate-950 border border-slate-800 rounded-xl p-3.5 space-y-2">
+                            <div className="font-bold text-xs text-amber-400">{o.name}</div>
+                            <div className="flex gap-2">
+                              <div className="flex-1">
+                                <label className="text-[10px] text-slate-400">EK (€/L)</label>
+                                <input
+                                  type="number"
+                                  step="0.1"
+                                  value={o.costEur}
+                                  onChange={(e) => handleUpdateOilPrice(o.id, 'costEur', e.target.value)}
+                                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-xs text-white"
+                                />
+                              </div>
+                              <div className="flex-1">
+                                <label className="text-[10px] text-slate-400">VK (€/L)</label>
+                                <input
+                                  type="number"
+                                  step="0.1"
+                                  value={o.priceEur}
+                                  onChange={(e) => handleUpdateOilPrice(o.id, 'priceEur', e.target.value)}
+                                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-xs font-bold text-emerald-400"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Active Catalog List */}
+                    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3">
+                      <h3 className="text-sm font-bold text-white">
+                        Aktive Teile, Reifen & Services ({catalogItems.length})
+                      </h3>
+                      <div className="space-y-2">
+                        {catalogItems.map((item) => (
+                          <div
+                            key={item.id}
+                            className="bg-slate-950 border border-slate-800 rounded-xl p-3 flex items-center justify-between text-xs"
+                          >
+                            <div>
+                              <span className="px-2 py-0.5 rounded bg-slate-800 text-amber-400 font-bold mr-2">
+                                {item.category}
+                              </span>
+                              <strong className="text-white">{item.de}</strong> /{' '}
+                              <span className="text-slate-400">{item.ar}</span>
+                            </div>
+                            <div className="flex items-center gap-4">
+                              <span>
+                                EK: <strong>{item.costEur.toFixed(2)} €</strong> • VK:{' '}
+                                <strong className="text-emerald-400">{item.priceEur.toFixed(2)} €</strong>
+                              </span>
+                              <button
+                                onClick={() => handleDeleteCatalogItem(item.id)}
+                                className="text-slate-500 hover:text-red-400"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* SUB-TAB C: BRANDING, LOGO & RECEIPT ADDRESS */}
+                {chefSubTab === 'branding' && (
+                  <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-5 max-w-2xl">
+                    <h3 className="text-base font-bold text-amber-400 flex items-center gap-2">
+                      <ImageIcon className="w-5 h-5" /> Firmen-Logo & Adresse für Kassenbons einstellen
+                    </h3>
+
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-300 mb-1.5">
+                          Eigenes Logo hochladen (erscheint oben auf jedem gedruckten Bon)
+                        </label>
+                        <div className="flex items-center gap-4">
+                          {branding.logoDataUrl && (
+                            <img
+                              src={branding.logoDataUrl}
+                              alt="Vorschau"
+                              className="h-16 w-16 object-contain bg-white rounded-xl p-1 border border-slate-700"
+                            />
+                          )}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleLogoUpload}
+                            className="text-xs text-slate-300 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-amber-500 file:text-slate-950 hover:file:bg-amber-400"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs text-slate-400 mb-1">Firmenname auf dem Bon</label>
+                          <input
+                            type="text"
+                            value={branding.companyName}
+                            onChange={(e) => setBranding({ ...branding, companyName: e.target.value })}
+                            className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-slate-400 mb-1">Werkstatt-Telefon auf dem Bon</label>
+                          <input
+                            type="text"
+                            value={branding.phone}
+                            onChange={(e) => setBranding({ ...branding, phone: e.target.value })}
+                            className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs text-slate-400 mb-1 flex items-center gap-1">
+                          <MapPin className="w-3.5 h-3.5 text-amber-400" /> Werkstatt-Adresse in Erbil
+                        </label>
+                        <input
+                          type="text"
+                          value={branding.address}
+                          onChange={(e) => setBranding({ ...branding, address: e.target.value })}
+                          className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs text-slate-400 mb-1">Fußzeile / Grußtext auf Bon</label>
+                          <input
+                            type="text"
+                            value={branding.footerNote}
+                            onChange={(e) => setBranding({ ...branding, footerNote: e.target.value })}
+                            className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-slate-400 mb-1">Wechselkurs (1 € in IQD)</label>
+                          <input
+                            type="number"
+                            value={branding.iqdRate}
+                            onChange={(e) =>
+                              setBranding({ ...branding, iqdRate: Number(e.target.value) || 1430 })
+                            }
+                            className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-sm font-bold text-amber-400"
+                          />
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          saveConfigToStore(branding, catalogItems, oils);
+                          showNotification('Logo, Adresse & Einstellungen gespeichert!');
+                        }}
+                        className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-6 py-3 rounded-xl text-sm"
+                      >
+                        Änderungen speichern
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
